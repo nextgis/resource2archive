@@ -9,27 +9,30 @@ import json
 import shutil
 import argparse
 from requests.auth import HTTPBasicAuth
+from tqdm import tqdm
+import tempfile
 
-#python NextGIS_attachments.py --url elina-usmanova --login administrator --password 123456 --parent_id 760 --path_name_zip D:/NextGIS/Attachments/zip1
+#python getfullresource.py --url elina-usmanova --login administrator --password pass --parent_id 760 --zip c:/work/zip1
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--url',type=str,required=True)
-parser.add_argument('--login',type=str,required=True,default='administrator')
-parser.add_argument('--password',type=str,required=True)
+parser.add_argument('--login',type=str,default='administrator')
+parser.add_argument('--password',type=str)
 parser.add_argument('--parent_id',type=str,required=True)
-parser.add_argument('--path_name_zip',type=str,required=True)
+parser.add_argument('--zip',type=str,required=True)
 
 args = parser.parse_args()
 
-#path = tempfile.gettempdir()
-#path = path.replace('\\','/')
-path = "D:/"
+path = tempfile.gettempdir()
 
-def generate_zip(url, login, password, parent_id, path_name_zip): 
+def generate_zip(url, login, password, parent_id, zip): 
     elems = []
-    AUTH = HTTPBasicAuth(login, password)
+    if args.login and args.password:
+        AUTH = HTTPBasicAuth(login, password)
+    else:
+        AUTH = HTTPBasicAuth('guest','guest')
     #Открываем zip на запись
-    with zipfile.ZipFile(path_name_zip + '.zip', 'w') as z:
+    with zipfile.ZipFile(zip + '.zip', 'w') as z:
         r = requests.get("http://%s.nextgis.com/api/resource/%s/geojson" %(url, parent_id), auth = AUTH)
         q = requests.get("http://%s.nextgis.com/api/resource/%s" %(url, parent_id), auth = AUTH)
         d = requests.get("http://%s.nextgis.com/api/resource/%s/feature/" %(url, parent_id), auth = AUTH)
@@ -39,7 +42,7 @@ def generate_zip(url, login, password, parent_id, path_name_zip):
         l = []
         at = []
         attachments = []
-        #print (dt)
+        print ('Downloading structure')
         for elem in dt:
             if elem["extensions"]["attachment"] != None:
                 for el in elem["extensions"]["attachment"]:
@@ -57,12 +60,14 @@ def generate_zip(url, login, password, parent_id, path_name_zip):
         z.write(r"D:/%s.geojson" %(f['resource']['display_name']))
         os.remove("D:/%s.geojson" %(f['resource']['display_name']))
         r = requests.get('http://%s.nextgis.com/api/resource/%s/feature/' %(url, parent_id), auth = AUTH)
-        data = json.loads(r.text)    
+        data = json.loads(r.text)
+        
+        pbar = tqdm(total=len(data))
         for elem in data:
             elems.append(elem['id'])
             if elem['extensions']['attachment'] != None:
                 os.mkdir(path + str(elem['id']))
-                #Загрузка вложений
+                #Download attachements
                 for attach in elem['extensions']['attachment']:
                     fid = attach['id']
                     p = requests.get("http://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/image" % (url, parent_id, elem['id'], fid), auth = AUTH)
@@ -75,11 +80,13 @@ def generate_zip(url, login, password, parent_id, path_name_zip):
                     z.write(path + str(elem['id']) + '/%s' % (d))  
             else:
                 continue
+            pbar.update(1)
         z.close() 
-    #Удаление созданных папок
+        pbar.close()
+    #Clean up folders
     for el in elems:
         shutil.rmtree(path + str(el), ignore_errors = True)
         
 if __name__ == '__main__':
-    generate_zip(args.url, args.login, args.password, args.parent_id, args.path_name_zip)
+    generate_zip(args.url, args.login, args.password, args.parent_id, args.zip)
 
