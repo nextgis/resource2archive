@@ -31,7 +31,8 @@ def generate_zip(url, login, password, parent_id, zip):
         AUTH = HTTPBasicAuth(login, password)
     else:
         AUTH = HTTPBasicAuth('guest','guest')
-    #Открываем zip на запись
+
+    print ('Downloading structure...')
     with zipfile.ZipFile(zip + '.zip', 'w') as z:
         r = requests.get("http://%s.nextgis.com/api/resource/%s/geojson" %(url, parent_id), auth = AUTH)
         q = requests.get("http://%s.nextgis.com/api/resource/%s" %(url, parent_id), auth = AUTH)
@@ -42,7 +43,6 @@ def generate_zip(url, login, password, parent_id, zip):
         l = []
         at = []
         attachments = []
-        print ('Downloading structure')
         for elem in dt:
             if elem["extensions"]["attachment"] != None:
                 for el in elem["extensions"]["attachment"]:
@@ -62,30 +62,34 @@ def generate_zip(url, login, password, parent_id, zip):
         r = requests.get('http://%s.nextgis.com/api/resource/%s/feature/' %(url, parent_id), auth = AUTH)
         data = json.loads(r.text)
         
-        pbar = tqdm(total=len(data))
+        attach_count = 0
         for elem in data:
-            elems.append(elem['id'])
             if elem['extensions']['attachment'] != None:
-                os.mkdir(path + str(elem['id']))
+                attach_count+=1
+        
+        pbar = tqdm(total=attach_count)
+        for elem in data:
+            if elem['extensions']['attachment'] != None:
+                elems.append(elem['id'])
+                id = str(elem['id'])
+                os.mkdir(os.path.join(path,id))
                 #Download attachements
                 for attach in elem['extensions']['attachment']:
                     fid = attach['id']
                     p = requests.get("http://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/image" % (url, parent_id, elem['id'], fid), auth = AUTH)
-                    with open(path + str(elem['id']) + '/' + attach['name'], "wb") as out:
+                    with open(os.path.join(path,id,attach['name']), "wb") as out:
                         out.write(p.content)
                         out.close()
-                directories = os.listdir(path + str(elem['id']))
+                directories = os.listdir(os.path.join(path,id))
                 for d in directories:
                     #print(d)
-                    z.write(path + str(elem['id']) + '/%s' % (d))  
-            else:
-                continue
-            pbar.update(1)
+                    z.write(os.path.join(path,id,d),os.path.join(id,d))
+                pbar.update(1)
         z.close() 
         pbar.close()
     #Clean up folders
     for el in elems:
-        shutil.rmtree(path + str(el), ignore_errors = True)
+        shutil.rmtree(os.path.join(path,str(el)), ignore_errors = True)
         
 if __name__ == '__main__':
     generate_zip(args.url, args.login, args.password, args.parent_id, args.zip)
