@@ -12,20 +12,20 @@ from requests.auth import HTTPBasicAuth
 from tqdm import tqdm
 import tempfile
 
-#python getfullresource.py --url elina-usmanova --login administrator --password pass --parent_id 760 --zip c:/work/zip1
+#python getfullresource.py --url demo --login test --password testtest --parent_id 4248 --zip c:/work/output.zip
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--url',type=str,required=True)
 parser.add_argument('--login',type=str,default='administrator')
 parser.add_argument('--password',type=str)
 parser.add_argument('--parent_id',type=str,required=True)
-parser.add_argument('--zip',type=str,required=True)
+parser.add_argument('--zip',type=str)
 
 args = parser.parse_args()
 
 path = tempfile.gettempdir()
 
-def generate_zip(url, login, password, parent_id, zip): 
+def generate_zip(url, login, password, parent_id, output_zip): 
     elems = []
     if args.login and args.password:
         AUTH = HTTPBasicAuth(login, password)
@@ -33,46 +33,44 @@ def generate_zip(url, login, password, parent_id, zip):
         AUTH = HTTPBasicAuth('guest','guest')
 
     print ('Downloading structure...')
-    with zipfile.ZipFile(zip + '.zip', 'w') as z:
-        r = requests.get("http://%s.nextgis.com/api/resource/%s/geojson" %(url, parent_id), auth = AUTH)
-        q = requests.get("http://%s.nextgis.com/api/resource/%s" %(url, parent_id), auth = AUTH)
-        d = requests.get("http://%s.nextgis.com/api/resource/%s/feature/" %(url, parent_id), auth = AUTH)
-        f = q.json()
-        data = json.loads(r.text)
-        dt = json.loads(d.text)
-        l = []
-        at = []
-        attachments = []
-        for elem in dt:
-            if elem["extensions"]["attachment"] != None:
-                for el in elem["extensions"]["attachment"]:
-                    at.append(el["name"])
-                attachments.append(at)
-                at = []
-            else:
-                attachments.append(l)
-        for el in range(len(data["features"])):
-            data["features"][el]["properties"]["attachments"] = attachments[el]
-        d = json.dumps(data)
-        with open("D:/%s.geojson" %(f['resource']['display_name']), 'w') as gj:
-            gj.write(d)
-            gj.close()
-        z.write(r"D:/%s.geojson" %(f['resource']['display_name']))
-        os.remove("D:/%s.geojson" %(f['resource']['display_name']))
-        r = requests.get('http://%s.nextgis.com/api/resource/%s/feature/' %(url, parent_id), auth = AUTH)
-        data = json.loads(r.text)
+    data = requests.get("http://%s.nextgis.com/api/resource/%s/geojson" %(url, parent_id), auth = AUTH).json()
+    resource = requests.get("http://%s.nextgis.com/api/resource/%s" %(url, parent_id), auth = AUTH).json()
+    features = requests.get("http://%s.nextgis.com/api/resource/%s/feature/" %(url, parent_id), auth = AUTH).json()
+        
+    at = []
+    attachments = []
+    for elem in features:
+        if elem["extensions"]["attachment"] != None:
+            for el in elem["extensions"]["attachment"]:
+                at.append(el["name"])
+            attachments.append(at)
+            at = []
+        else:
+            attachments.append([])
+    for el in range(len(data["features"])):
+        data["features"][el]["properties"]["attachments"] = attachments[el]
+    
+    geojson_filename = '%s.geojson' %(resource['resource']['display_name'])
+    geojson_filenamefull = os.path.join(path,geojson_filename)
+    with open(geojson_filenamefull, 'w') as gj:
+        gj.write(json.dumps(data))
+    
+    with zipfile.ZipFile(output_zip, 'w') as z:
+        z.write(geojson_filenamefull,geojson_filename)
+        os.remove(geojson_filenamefull)
         
         attach_count = 0
-        for elem in data:
+        for elem in features:
             if elem['extensions']['attachment'] != None:
                 attach_count+=1
         
         pbar = tqdm(total=attach_count)
-        for elem in data:
+        for elem in features:
             if elem['extensions']['attachment'] != None:
                 elems.append(elem['id'])
                 id = str(elem['id'])
                 os.mkdir(os.path.join(path,id))
+                
                 #Download attachements
                 for attach in elem['extensions']['attachment']:
                     fid = attach['id']
@@ -92,5 +90,9 @@ def generate_zip(url, login, password, parent_id, zip):
         shutil.rmtree(os.path.join(path,str(el)), ignore_errors = True)
         
 if __name__ == '__main__':
-    generate_zip(args.url, args.login, args.password, args.parent_id, args.zip)
+    if not args.zip:
+        output_zip = 'output.zip'
+    else:
+        output_zip = args.zip
+    generate_zip(args.url, args.login, args.password, args.parent_id, output_zip)
 
