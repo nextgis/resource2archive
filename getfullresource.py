@@ -12,20 +12,20 @@ from requests.auth import HTTPBasicAuth
 from tqdm import tqdm
 import tempfile
 
-#python getfullresource.py --url demo --login test --password testtest --parent_id 4248 --zip c:/work/output.zip
+#python getfullresource.py --url demo --login test --password testtest --layer_id 4248 --zip c:/work/output.zip
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--url',type=str,required=True)
 parser.add_argument('--login',type=str,default='administrator')
 parser.add_argument('--password',type=str)
-parser.add_argument('--parent_id',type=str,required=True)
+parser.add_argument('--layer_id',type=str,required=True)
 parser.add_argument('--zip',type=str)
 
 args = parser.parse_args()
 
 path = tempfile.gettempdir()
 
-def generate_zip(url, login, password, parent_id, output_zip): 
+def generate_zip(url, login, password, layer_id, output_zip): 
     elems = []
     if args.login and args.password:
         AUTH = HTTPBasicAuth(login, password)
@@ -33,9 +33,9 @@ def generate_zip(url, login, password, parent_id, output_zip):
         AUTH = HTTPBasicAuth('guest','guest')
 
     print ('Downloading structure...')
-    data = requests.get("http://%s.nextgis.com/api/resource/%s/geojson" %(url, parent_id), auth = AUTH).json()
-    resource = requests.get("http://%s.nextgis.com/api/resource/%s" %(url, parent_id), auth = AUTH).json()
-    features = requests.get("http://%s.nextgis.com/api/resource/%s/feature/" %(url, parent_id), auth = AUTH).json()
+    data = requests.get("http://%s.nextgis.com/api/resource/%s/geojson" %(url, layer_id), auth = AUTH).json()
+    resource = requests.get("http://%s.nextgis.com/api/resource/%s" %(url, layer_id), auth = AUTH).json()
+    features = requests.get("http://%s.nextgis.com/api/resource/%s/feature/" %(url, layer_id), auth = AUTH).json()
         
     at = []
     attachments = []
@@ -74,7 +74,7 @@ def generate_zip(url, login, password, parent_id, output_zip):
                 #Download attachements
                 for attach in elem['extensions']['attachment']:
                     fid = attach['id']
-                    p = requests.get("http://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/image" % (url, parent_id, elem['id'], fid), auth = AUTH)
+                    p = requests.get("http://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/image" % (url, layer_id, elem['id'], fid), auth = AUTH)
                     with open(os.path.join(path,id,attach['name']), "wb") as out:
                         out.write(p.content)
                         out.close()
@@ -94,5 +94,5 @@ if __name__ == '__main__':
         output_zip = 'output.zip'
     else:
         output_zip = args.zip
-    generate_zip(args.url, args.login, args.password, args.parent_id, output_zip)
+    generate_zip(args.url, args.login, args.password, args.layer_id, output_zip)
 
