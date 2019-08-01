@@ -12,7 +12,7 @@ from requests.auth import HTTPBasicAuth
 from tqdm import tqdm
 import tempfile
 
-#python getfullresource.py --url demo --login test --password testtest --layer_id 4248 --zip c:/work/output.zip
+#python getfullresource.py --url demo --login test --password testtest --layer_id 4248 --zip output.zip
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--url',type=str,required=True)
@@ -74,7 +74,8 @@ def generate_zip(url, login, password, layer_id, output_zip):
                 #Download attachements
                 for attach in elem['extensions']['attachment']:
                     fid = attach['id']
-                    p = requests.get("http://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/image" % (url, layer_id, elem['id'], fid), auth = AUTH)
+                    #http://iproekt.nextgis.com/api/resource/638/feature/1/attachment/180/download
+                    p = requests.get("http://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/download" % (url, layer_id, elem['id'], fid), auth = AUTH)
                     with open(os.path.join(path,id,attach['name']), "wb") as out:
                         out.write(p.content)
                         out.close()
