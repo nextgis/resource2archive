@@ -30,7 +30,7 @@ def generate_zip(url, login, password, layer_id, output_zip):
     if args.login and args.password:
         AUTH = HTTPBasicAuth(login, password)
     else:
-        AUTH = HTTPBasicAuth('guest','guest')
+        AUTH = ''
 
     print ('Downloading structure...')
     data = requests.get("http://%s.nextgis.com/api/resource/%s/geojson" %(url, layer_id), auth = AUTH).json()
