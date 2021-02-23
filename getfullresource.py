@@ -31,11 +31,12 @@ def generate_zip(url, login, password, layer_id, output_zip):
         AUTH = HTTPBasicAuth(login, password)
     else:
         AUTH = ''
-
+    
+    resource_url = 'http://%s.nextgis.com/api/resource/%s' %(url, layer_id)
     print ('Downloading structure...')
-    data = requests.get("http://%s.nextgis.com/api/resource/%s/geojson" %(url, layer_id), auth = AUTH).json()
-    resource = requests.get("http://%s.nextgis.com/api/resource/%s" %(url, layer_id), auth = AUTH).json()
-    features = requests.get("http://%s.nextgis.com/api/resource/%s/feature/" %(url, layer_id), auth = AUTH).json()
+    data = requests.get(resource_url + '/geojson', auth = AUTH).json()
+    resource = requests.get(resource_url, auth = AUTH).json()
+    features = requests.get(resource_url + '/feature/', auth = AUTH).json()
         
     at = []
     attachments = []
