@@ -11,6 +11,7 @@ import argparse
 from requests.auth import HTTPBasicAuth
 from tqdm import tqdm
 import tempfile
+import sys
 
 #python getfullresource.py --url demo --login test --password testtest --layer_id 4248 --zip output.zip
 
@@ -80,7 +81,10 @@ def generate_zip(url, login, password, layer_id, output_zip):
                             fid = attach['id']
                             #http://demo.nextgis.com/api/resource/4248/feature/1/attachment/42/download
                             p = requests.get("http://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/download" % (url, layer_id, elem['id'], fid), auth = AUTH)
-                            attach_name = attach['name'].encode('utf-8')
+                            if sys.version_info[0] == 2:
+                                attach_name = attach['name'].encode('utf-8')
+                            else:
+                                attach_name = attach['name']
                             with open(os.path.join(path,id,attach_name), 'wb') as out:
                                 out.write(p.content)
                                 out.close()
