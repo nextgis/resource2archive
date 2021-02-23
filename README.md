@@ -3,12 +3,11 @@ Download nextgis.com resource with all attachments as one ZIP file
 
     python getfullresource.py --url demo --login guest --password guest --layer_id 4248 --zip c:/temp/output.zip
     
-or to get output.zip where script is ran:
+or to get output.zip where script is ran (permissions are ok):
 
-    python getfullresource.py --url demo --login guest --password guest --layer_id 4248
+    python getfullresource.py --url demo --layer_id 4248
 
-Checked and works under Python 2.7.x and Python 3.7.x
-
+Works under Python 2.7.x and Python 3.7.x
 
 Params:
 

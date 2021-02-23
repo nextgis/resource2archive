@@ -75,12 +75,13 @@ def generate_zip(url, login, password, layer_id, output_zip):
                         id = str(elem['id'])
                         os.mkdir(os.path.join(path,id))
                         
-                        #Download attachements
+                        #Download attachments
                         for attach in elem['extensions']['attachment']:
                             fid = attach['id']
-                            #http://iproekt.nextgis.com/api/resource/638/feature/1/attachment/180/download
+                            #http://demo.nextgis.com/api/resource/4248/feature/1/attachment/42/download
                             p = requests.get("http://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/download" % (url, layer_id, elem['id'], fid), auth = AUTH)
-                            with open(os.path.join(path,id,attach['name']), "wb") as out:
+                            attach_name = attach['name'].encode('utf-8')
+                            with open(os.path.join(path,id,attach_name), 'wb') as out:
                                 out.write(p.content)
                                 out.close()
                         directories = os.listdir(os.path.join(path,id))
