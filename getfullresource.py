@@ -10,7 +10,7 @@ import shutil
 import argparse
 from requests.auth import HTTPBasicAuth
 from tqdm import tqdm
-import tempfile
+from datetime import datetime
 import six
 
 #python getfullresource.py --url demo --login test --password testtest --layer_id 4248 --zip output.zip
@@ -24,9 +24,7 @@ parser.add_argument('--zip',type=str)
 
 args = parser.parse_args()
 
-path = tempfile.gettempdir()
-
-def generate_zip(url, login, password, layer_id, output_zip): 
+def generate_zip(path, url, login, password, layer_id, output_zip): 
     elems = []
     if args.login and args.password:
         AUTH = HTTPBasicAuth(login, password)
@@ -105,5 +103,12 @@ if __name__ == '__main__':
         output_zip = 'output.zip'
     else:
         output_zip = args.zip
-    generate_zip(args.url, args.login, args.password, args.layer_id, output_zip)
+    
+    dt = datetime.now().strftime("%Y%m%d_%H%M%S")
+    temp_name = args.url + '_' + dt + '_' + next(tempfile._get_candidate_names())
+    path = os.path.join(tempfile.gettempdir(),temp_name)
+    os.mkdir(path)
+
+    generate_zip(path, args.url, args.login, args.password, args.layer_id, output_zip)
+    shutil.rmtree(path)
 
