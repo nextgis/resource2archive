@@ -32,7 +32,7 @@ def generate_zip(url, login, password, layer_id, output_zip):
         AUTH = HTTPBasicAuth(login, password)
     else:
         AUTH = ''
-    resource_url = 'http://%s.nextgis.com/api/resource/%s' %(url, layer_id)
+    resource_url = 'https://%s.nextgis.com/api/resource/%s' %(url, layer_id)
     resource = requests.get(resource_url, auth = AUTH).json()
     
     if 'exception' not in resource.keys():
@@ -60,7 +60,7 @@ def generate_zip(url, login, password, layer_id, output_zip):
             with open(geojson_filenamefull, 'w') as gj:
                 gj.write(json.dumps(data))
             
-            with zipfile.ZipFile(output_zip, 'w') as z:
+            with zipfile.ZipFile(output_zip, 'w', allowZip64 = True) as z:
                 z.write(geojson_filenamefull,geojson_filename)
                 os.remove(geojson_filenamefull)
                 
@@ -79,8 +79,8 @@ def generate_zip(url, login, password, layer_id, output_zip):
                         #Download attachments
                         for attach in elem['extensions']['attachment']:
                             fid = attach['id']
-                            #http://demo.nextgis.com/api/resource/4248/feature/1/attachment/42/download
-                            p = requests.get("http://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/download" % (url, layer_id, elem['id'], fid), auth = AUTH)
+                            #https://demo.nextgis.com/api/resource/4248/feature/1/attachment/42/download
+                            p = requests.get("https://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/download" % (url, layer_id, elem['id'], fid), auth = AUTH)
                             attach_name = six.ensure_str(attach['name'])
                             with open(os.path.join(path,id,attach_name), 'wb') as out:
                                 out.write(p.content)
