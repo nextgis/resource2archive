@@ -17,6 +17,9 @@ valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
 
 #python getfullresource.py --url demo --login test --password testtest --layer_id 4248 --zip output.zip
 
+
+#TODO make sanitize an argument?
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--url',type=str,required=True)
 parser.add_argument('--login',type=str,default='administrator')
@@ -25,6 +28,11 @@ parser.add_argument('--layer_id',type=str,required=True)
 parser.add_argument('--zip',type=str)
 
 args = parser.parse_args()
+
+def sanitize(attach_name):
+    name = ''.join(c for c in attach_name if c in valid_chars)
+
+    return name
 
 def generate_zip(path, url, login, password, layer_id, output_zip): 
     elems = []
@@ -53,7 +61,12 @@ def generate_zip(path, url, login, password, layer_id, output_zip):
                 else:
                     attachments.append([])
             for el in range(len(data["features"])):
-                data["features"][el]["properties"]["attachments"] = attachments[el]
+                items = []
+                for item in attachments[el]:
+                    item = sanitize(item)
+                    items.append(item)
+
+                data["features"][el]["properties"]["attachments"] = items
             
             geojson_filename = '%s.geojson' %(resource['resource']['display_name'])
             geojson_filenamefull = os.path.join(path,geojson_filename)
@@ -83,7 +96,7 @@ def generate_zip(path, url, login, password, layer_id, output_zip):
                             link = 'https://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/download' % (url, layer_id, elem['id'], fid)
                             p = requests.get(link, auth = AUTH)
                             attach_name = six.ensure_str(attach['name'])
-                            attach_name = ''.join(c for c in attach_name if c in valid_chars)
+                            attach_name = sanitize(attach_name)
                             with open(os.path.join(path,id,attach_name), 'wb') as out:
                                 out.write(p.content)
                         directories = os.listdir(os.path.join(path,id))
