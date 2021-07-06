@@ -11,7 +11,9 @@ import argparse
 from requests.auth import HTTPBasicAuth
 from tqdm import tqdm
 from datetime import datetime
-import six
+import six,string
+
+valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
 
 #python getfullresource.py --url demo --login test --password testtest --layer_id 4248 --zip output.zip
 
@@ -78,11 +80,12 @@ def generate_zip(path, url, login, password, layer_id, output_zip):
                         for attach in elem['extensions']['attachment']:
                             fid = attach['id']
                             #https://demo.nextgis.com/api/resource/4248/feature/1/attachment/42/download
-                            p = requests.get("https://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/download" % (url, layer_id, elem['id'], fid), auth = AUTH)
+                            link = 'https://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/download' % (url, layer_id, elem['id'], fid)
+                            p = requests.get(link, auth = AUTH)
                             attach_name = six.ensure_str(attach['name'])
+                            attach_name = ''.join(c for c in attach_name if c in valid_chars)
                             with open(os.path.join(path,id,attach_name), 'wb') as out:
                                 out.write(p.content)
-                                out.close()
                         directories = os.listdir(os.path.join(path,id))
                         for d in directories:
                             #print(d)
