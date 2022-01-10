@@ -13,3 +13,6 @@ Params:
 
     * url - subdomain name of your Web GIS url. If your Web GIS is example.nextgis.com use 'example' here.
     * layer_id - resource ID of a vector layer that needs to be downloaded
+    
+    
+For reverse operation, see attach2resource repo https://github.com/nextgis/attach2resource
