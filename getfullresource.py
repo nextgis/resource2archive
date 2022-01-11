@@ -49,63 +49,66 @@ def generate_zip(path, url, login, password, layer_id, output_zip):
             data = requests.get(resource_url + '/geojson', auth = AUTH).json()
             
             features = requests.get(resource_url + '/feature/', auth = AUTH).json()
-                
-            at = []
-            attachments = []
-            for elem in features:
-                if elem["extensions"]["attachment"] != None:
-                    for el in elem["extensions"]["attachment"]:
-                        at.append(el["name"])
-                    attachments.append(at)
-                    at = []
-                else:
-                    attachments.append([])
-            for el in range(len(data["features"])):
-                items = []
-                for item in attachments[el]:
-                    item = sanitize(item)
-                    items.append(item)
 
-                data["features"][el]["properties"]["attachments"] = items
-            
-            geojson_filename = '%s.geojson' %(resource['resource']['display_name'])
-            geojson_filenamefull = os.path.join(path,geojson_filename)
-            with open(geojson_filenamefull, 'w') as gj:
-                gj.write(json.dumps(data))
-            
-            with zipfile.ZipFile(output_zip, 'w', allowZip64 = True) as z:
-                z.write(geojson_filenamefull,geojson_filename)
-                os.remove(geojson_filenamefull)
-                
-                attach_count = 0
+            if 'status_code' not in features:
+                at = []
+                attachments = []
                 for elem in features:
-                    if elem['extensions']['attachment'] != None:
-                        attach_count+=1
+                    if elem["extensions"]["attachment"] != None:
+                        for el in elem["extensions"]["attachment"]:
+                            at.append(el["name"])
+                        attachments.append(at)
+                        at = []
+                    else:
+                        attachments.append([])
+                for el in range(len(data["features"])):
+                    items = []
+                    for item in attachments[el]:
+                        item = sanitize(item)
+                        items.append(item)
+
+                    data["features"][el]["properties"]["attachments"] = items
                 
-                pbar = tqdm(total=attach_count)
-                for elem in features:
-                    if elem['extensions']['attachment'] != None:
-                        elems.append(elem['id'])
-                        id = str(elem['id'])
-                        os.mkdir(os.path.join(path,id))
-                        
-                        #Download attachments
-                        for attach in elem['extensions']['attachment']:
-                            fid = attach['id']
-                            #https://demo.nextgis.com/api/resource/4248/feature/1/attachment/42/download
-                            link = 'https://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/download' % (url, layer_id, elem['id'], fid)
-                            p = requests.get(link, auth = AUTH)
-                            attach_name = six.ensure_str(attach['name'])
-                            attach_name = sanitize(attach_name)
-                            with open(os.path.join(path,id,attach_name), 'wb') as out:
-                                out.write(p.content)
-                        directories = os.listdir(os.path.join(path,id))
-                        for d in directories:
-                            #print(d)
-                            z.write(os.path.join(path,id,d),os.path.join(id,d))
-                        pbar.update(1)
-                z.close() 
-                pbar.close()
+                geojson_filename = '%s.geojson' %(resource['resource']['display_name'])
+                geojson_filenamefull = os.path.join(path,geojson_filename)
+                with open(geojson_filenamefull, 'w') as gj:
+                    gj.write(json.dumps(data))
+                
+                with zipfile.ZipFile(output_zip, 'w', allowZip64 = True) as z:
+                    z.write(geojson_filenamefull,geojson_filename)
+                    os.remove(geojson_filenamefull)
+                    
+                    attach_count = 0
+                    for elem in features:
+                        if elem['extensions']['attachment'] != None:
+                            attach_count+=1
+                    
+                    pbar = tqdm(total=attach_count)
+                    for elem in features:
+                        if elem['extensions']['attachment'] != None:
+                            elems.append(elem['id'])
+                            id = str(elem['id'])
+                            os.mkdir(os.path.join(path,id))
+                            
+                            #Download attachments
+                            for attach in elem['extensions']['attachment']:
+                                fid = attach['id']
+                                #https://demo.nextgis.com/api/resource/4248/feature/1/attachment/42/download
+                                link = 'https://%s.nextgis.com/api/resource/%s/feature/%s/attachment/%s/download' % (url, layer_id, elem['id'], fid)
+                                p = requests.get(link, auth = AUTH)
+                                attach_name = six.ensure_str(attach['name'])
+                                attach_name = sanitize(attach_name)
+                                with open(os.path.join(path,id,attach_name), 'wb') as out:
+                                    out.write(p.content)
+                            directories = os.listdir(os.path.join(path,id))
+                            for d in directories:
+                                #print(d)
+                                z.write(os.path.join(path,id,d),os.path.join(id,d))
+                            pbar.update(1)
+                    z.close() 
+                    pbar.close()
+            else:
+                print('HTTP error %s. Invalid request or problems with the server.' % features['status_code'])
             #Clean up folders
             for el in elems:
                 shutil.rmtree(os.path.join(path,str(el)), ignore_errors = True)
