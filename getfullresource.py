@@ -50,7 +50,7 @@ def generate_zip(path, url, login, password, layer_id, output_zip):
             
             features = requests.get(resource_url + '/feature/', auth = AUTH).json()
 
-            if 'status_code' not in features:
+            if 'exception' not in features.keys():
                 at = []
                 attachments = []
                 for elem in features:
