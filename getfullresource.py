@@ -44,7 +44,7 @@ def generate_zip(path, url, login, password, layer_id, output_zip):
     resource = requests.get(resource_url, auth = AUTH).json()
     
     if 'exception' not in resource.keys():
-        if resource['resource']['cls'] == 'vector_layer':
+        if resource['resource']['cls'] == 'vector_layer' or resource['resource']['cls'] == 'postgis_layer':
             print ('Downloading structure...')
             data = requests.get(resource_url + '/geojson', auth = AUTH).json()
             
