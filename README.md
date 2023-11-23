@@ -7,7 +7,7 @@ or to get output.zip where script is ran (permissions are ok):
 
     python getfullresource.py --url demo --layer_id 4248
 
-Works under Python 2.7.x and Python 3.7.x
+Works under Python 3.x
 
 Params:
 
