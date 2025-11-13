@@ -1,5 +1,5 @@
 # resource2archive
-Download nextgis.com resource with all attachments as one ZIP file
+Download a nextgis.com vector layer resource with all attachments as a single ZIP file
 
     python getfullresource.py --url demo --login guest --password guest --layer_id 4248 --zip c:/temp/output.zip
     
